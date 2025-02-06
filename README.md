@@ -177,28 +177,4 @@ action set_limit() {
 ./client.sh admin set_bandwidth --user <username> --limit 10Mbps
 ```
 
----
-
-### **3. Personnel Roles and Responsibilities**
-| Team Member       | Responsibility                                                   |
-|------------------|-------------------------------------------------------------------|
-| **WebDAV Developer**  | Set up and configure the WebDAV server for file operations.       |
-| **Backend Developer** | Implement the Network REST API, handle JWT, and manage requests. |
-| **Network Engineer**  | Configure and manage P4 logic on BMv2 for bandwidth control.     |
-| **CLI Developer**     | Design and implement the terminal-based `client.sh` script.      |
-| **System Integrator** | Ensure smooth integration between WebDAV, REST APIs, and P4.     |
-| **Tester**            | Perform functional, security, and performance testing.           |
-
-
-### **4. Testing and Deployment**
-- **Unit Tests:** Test individual API endpoints and WebDAV file operations.
-- **Integration Tests:** Validate the workflow from user login to file access and bandwidth control.
-- **Performance Tests:** Ensure the system handles concurrent file operations efficiently.
-
-
-### **5. Future Considerations**
-- **Web UI Integration:** Add a web interface for easier file and network management.
-- **Advanced Access Policies:** Implement more granular access control based on file types or directories.
-- **Scalability:** Consider moving to hardware switches (e.g., Tofino) for higher performance.
-
 
