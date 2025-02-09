@@ -11,13 +11,13 @@ policy_counter = 0
 
 instance = direct_counter_controller.ARPCache()
 instance.start()
-instance.read_direct_counter()
+# instance.read_direct_counter()
 
-def add_policy_to_switch(policy):
-    pass
+def add_policy_to_switch(instance, policy):
+    instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
 
-def delete_policy_from_switch(policy):
-    pass
+def delete_policy_from_switch(instance, policy):
+    instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
 
 @app.route('/policies', methods=['GET'])
 def get_policies():
@@ -44,15 +44,17 @@ def add_policy():
     policies[policy_counter] = policy
     policy_counter += 1
 
-    add_policy_to_switch(policy)
-    return jsonify, 201
+    add_policy_to_switch(instance, policy)
+    return jsonify(policy), 201
 
 @app.route('/policies/<int:policy_id>', methods=['PUT'])
 def update_policy_by_id(policy_id):
     data = request.get_json()
     if policy_id not in policies:
            return jsonify({"error": "policy does not exist"})
-    delete_policy_from_switch(policies[policy_id])
+    print("=================start del==================================")
+    delete_policy_from_switch(instance, policies[policy_id])
+    print("============================================================")
 
     policy = policies[policy_id]
     if "src_ip" in data:
@@ -65,7 +67,7 @@ def update_policy_by_id(policy_id):
         policy["action"] = data["action"]
     policies[policy_id] = policy
 
-    add_policy_to_switch(policy)
+    add_policy_to_switch(instance, policy)
     return jsonify(policy), 200
 
 @app.route('/policies', methods=['PUT'])
@@ -87,9 +89,9 @@ def upsert_policy():
             break
 
     if existing_policy is not None:
-        delete_policy_from_switch(existing_policy)
+        delete_policy_from_switch(instance, existing_policy)
         existing_policy["action"] = data["action"]
-        add_policy_to_switch(existing_policy)
+        add_policy_to_switch(instance, existing_policy)
         return jsonify(existing_policy), 200
     else:
         policy = {
@@ -100,27 +102,29 @@ def upsert_policy():
         }
         policies[policy_counter] = policy
         policy_counter += 1
-        add_policy_to_switch(policy)
+        add_policy_to_switch(instance, policy)
 
         return jsonify(policy), 201
 @app.route('/policies/<int:policy_id>', methods=['DELETE'])
 def delete_policy(policy_id):
     if policy_id not in policies:
-        return jsonify({"error": "policy does not exist"), 404)
+        return jsonify({"error": "policy does not exist"}, 404)
 
-    delete_policy_from_switch(policies[policy_id])
+    delete_policy_from_switch(instance, policies[policy_id])
     del policies[policy_id]
     return jsonify({"message": "policies deleted"}), 200
 
+if __name__ == '__main__':
+    print("main thread!")
+    app.run(host='0.0.0.0', port=8080, debug=True,
+            threaded=True, use_reloader=False)
 
 
-
-try:
-    print("Starting REST API service...")
-    app.run(debug=True)
-except KeyboardInterrupt:
-    print("exit...")
-finally:
-    ShutdownAllSwitchConnections()
-
+# try:
+#     print("Starting REST API service...")
+#     app.run(debug=True)
+# except KeyboardInterrupt:
+#     print("exit...")
+# finally:
+#     ShutdownAllSwitchConnections()
 

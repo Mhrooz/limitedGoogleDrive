@@ -19,6 +19,8 @@ logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
 from p4.config.v1 import p4info_pb2
 from ipaddr import IPv4Address, AddressValueError
+import ipaddress
+import socket
 
 from appcore import APPCore
 
@@ -26,6 +28,7 @@ from p4utils.utils.helper import load_topo
 from p4utils.utils.sswitch_p4runtime_API import SimpleSwitchP4RuntimeAPI
 
 from flask import Flask,request,jsonify
+
 
 
 
@@ -73,6 +76,7 @@ class ARPCache(threading.Thread):
                         arpp = pkt[ARP]
                         logging.debug("ARP OP = %s"%arpp.op)
                         logging.debug("ARP HWSRC = %s"%arpp.psrc)
+                        logging.debug("ARP SRC_IP = %s"%arpp.pdst)
                         self.update_arpdb(sw, in_port, pkt)
 
     def run(self):
@@ -150,6 +154,39 @@ class ARPCache(threading.Thread):
             i += 1
     def install_policy_rule(self, src_ip, dst_ip, action):
         logging.debug("install policy rule....")
+        action = 'NoAction' if action == 'allow' else 'drop_packet'
+        src_sw = self.arpdb[src_ip]['swid']
+        dst_sw = self.arpdb[dst_ip]['swid']
+        path = self.topo.get_shortest_paths_between_nodes('s'+str(src_sw),'s'+str(dst_sw))[0]
+        logging.debug("shortest path between switches %s and %s is %s"%(src_sw, dst_sw, path))
+        i = 1 #index
+        logging.debug(f"add {action} to policy_table from {src_ip} to {dst_ip}")
+        for sw in path:
+            swid = int(sw[1:]) #e.g., sw = 's10', swid = 10
+            self.con[swid].controller.table_add("policy_table", action, [src_ip, dst_ip])
+            i += 1
+
+    def delete_policy_rule(self, src_ip, dst_ip, action):
+        action = 'NoAction' if action == 'allow' else 'drop_packet'
+        src_sw = self.arpdb[src_ip]['swid']
+        dst_sw = self.arpdb[dst_ip]['swid']
+        path = self.topo.get_shortest_paths_between_nodes('s'+str(src_sw),'s'+str(dst_sw))[0]
+        logging.debug("shortest path between switches %s and %s is %s"%(src_sw, dst_sw, path))
+        i = 1 #index
+        logging.debug(f"delete {action} to policy_table from {src_ip} to {dst_ip}")
+
+        def ip_to_bytes(ip_str):
+            return socket.inet_aton(ip_str)
+        # match_fields = [ ip_to_bytes(src_ip), ip_to_bytes(dst_ip) ]
+        match_fields = [src_ip, dst_ip]
+
+        logging.debug(f"match_fields: {match_fields}")
+
+        for sw in path:
+            swid = int(sw[1:]) #e.g., sw = 's10', swid = 10
+            self.con[swid].controller.table_delete_match("policy_table", match_fields)
+            i += 1
+
 
 
 

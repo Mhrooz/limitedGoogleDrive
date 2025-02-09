@@ -92,10 +92,12 @@ header udp_t {
     bit<16> checksum;
 }
 
+/*
 header user_meta_t{
     bit<1> reinject;
     bit<2> user_type;
 }
+*/
 
 struct metadata {
     /* empty */
@@ -120,7 +122,7 @@ header packet_out_header_t {
 
 
 struct headers {
-    user_meta_t user_meta;
+    //user_meta_t user_meta;
     packet_out_header_t packet_out;
     packet_in_header_t packet_in;
     @name(".ethernet")
@@ -219,7 +221,7 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
 
     direct_counter(CounterType.packets_and_bytes) rule_counter;
-
+    bit<9>drop_port = 0;
     action send_to_cpu() {
         standard_metadata.egress_spec = CPU_PORT;
     }
@@ -243,7 +245,7 @@ control MyIngress(inout headers hdr,
     }
 
     action drop_packet(){
-        standard_metadata.egress_spec = drop_packet;
+        standard_metadata.egress_spec = drop_port;
     }
 
     table smac {
