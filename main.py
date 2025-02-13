@@ -1,4 +1,6 @@
 import direct_counter_controller
+from auth_controller import AuthController
+from webdav_controller import WebDAVController
 
 from flask import Flask, request, jsonify
 from flask_restful import Api
@@ -13,17 +15,32 @@ instance = direct_counter_controller.ARPCache()
 instance.start()
 # instance.read_direct_counter()
 
+auth = AuthController()
+webdav = WebDAVController()
+
 def add_policy_to_switch(instance, policy):
     instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
 
 def delete_policy_from_switch(instance, policy):
     instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
 
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    if not data or 'username' not in data or 'password' not in data:
+        return jsonify({"error": "Missing username or password"}), 400
+    
+    token = auth.authenticate(data['username'], data['password'])
+    if token:
+        return jsonify({"token": token}), 200
+    return jsonify({"error": "Invalid credentials"}), 401
+
 @app.route('/policies', methods=['GET'])
 def get_policies():
     return jsonify(list(policies.values())), 200
 
 @app.route('/policies', methods=['POST'])
+@auth.token_required(roles=['administrator'])
 def add_policy():
     global policy_counter
     data = request.get_json()
@@ -115,7 +132,8 @@ def delete_policy(policy_id):
     return jsonify({"message": "policies deleted"}), 200
 
 if __name__ == '__main__':
-    print("main thread!")
+    print("Starting services...")
+    webdav.start()
     app.run(host='0.0.0.0', port=8080, debug=True,
             threaded=True, use_reloader=False)
 
