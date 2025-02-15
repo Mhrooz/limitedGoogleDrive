@@ -21,6 +21,14 @@ counter_thread = threading.Thread(
 
 counter_thread.start()
 
+meter_thread = threading.Thread(
+        target = instance.read_meter_stats,
+        args = (1, "smac"),
+        daemon=True
+)
+
+counter_thread.start()
+
 # instance.read_direct_counter()
 
 def add_policy_to_switch(instance, policy):

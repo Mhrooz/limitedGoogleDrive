@@ -221,6 +221,8 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
 
     direct_counter(CounterType.packets_and_bytes) rule_counter;
+
+    direct_meter<bit<32>>(MeterType.packets) my_meter;
     bit<9>drop_port = 0;
     action send_to_cpu() {
         standard_metadata.egress_spec = CPU_PORT;
@@ -257,6 +259,7 @@ control MyIngress(inout headers hdr,
             NoAction;
         }
         size = 256;
+        meters = my_meter;
         default_action = send_to_cpu;
     }
 
