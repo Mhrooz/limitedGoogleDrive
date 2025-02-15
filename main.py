@@ -3,6 +3,8 @@ import direct_counter_controller
 from flask import Flask, request, jsonify
 from flask_restful import Api
 
+import threading
+
 app = Flask(__name__)
 api = Api(app)
 
@@ -11,6 +13,14 @@ policy_counter = 0
 
 instance = direct_counter_controller.ARPCache()
 instance.start()
+
+counter_thread = threading.Thread(
+        target = instance.read_direct_counter,
+        daemon=True
+)
+
+counter_thread.start()
+
 # instance.read_direct_counter()
 
 def add_policy_to_switch(instance, policy):
