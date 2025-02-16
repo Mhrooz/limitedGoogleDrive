@@ -307,6 +307,17 @@ control MyIngress(inout headers hdr,
         size = 256;
         default_action = NoAction;
     }
+    table m_filter{
+        key = {
+            meta.meter_tag: exact;
+        }
+        actions = {
+            drop;
+            NoAction;
+        }
+        default_action = NoAction;
+        size = 16;
+    }
     apply {
         if (hdr.packet_out.isValid()) {
             // Implement logic such that if this is a packet-out from the
@@ -323,6 +334,9 @@ control MyIngress(inout headers hdr,
             dmac.apply();
         } 
         policy_table.apply();
+
+        m_filter.apply();
+        
     }
 }
 
