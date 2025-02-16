@@ -233,23 +233,8 @@ control MyIngress(inout headers hdr,
         my_meter.read(meta.meter_tag);
     }
 
-    action debug_meter() {
-        my_meter.read(meta.meter_tag);
-        debug(meta.meter_tag);  
-    }
-
     action queue_packet(){
         send_to_cpu();
-    }
-
-    action token_bucket_check(bit<32> pkt_size){
-        bit<32> tokens;
-        token_bucket_reg.read(tokens, 0);
-        if (tokens >= pkt_size){
-            token_bucket_reg.write(0, tokens - pkt_size);
-        } else{
-            queue_packet();
-        }
     }
 
     action forward(bit<9> egress_port) {
