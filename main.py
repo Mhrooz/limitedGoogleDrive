@@ -27,7 +27,7 @@ meter_thread = threading.Thread(
         daemon=True
 )
 
-counter_thread.start()
+meter_thread.start()
 
 # instance.read_direct_counter()
 
