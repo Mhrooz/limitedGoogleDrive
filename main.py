@@ -29,9 +29,9 @@ meter_thread = threading.Thread(
 
 meter_thread.start()
 
-instance.con[1].controller.table_add("m_read", "m_action", ["52:54:00:83:a7:2d"])
+# instance.con[1].controller.table_add("m_read", "m_action", ["52:54:00:83:a7:2d"])
 
-instance.set_meter_rates("my_meter", "52:54:00:83:a7:2d", 1, [(1000000, 10000), (5000000, 20000)])
+# instance.set_meter_rates("my_meter", "52:54:00:83:a7:2d", 1, [(1000000, 10000), (5000000, 20000)])
 
 def add_policy_to_switch(instance, policy):
     instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
@@ -41,7 +41,25 @@ def delete_policy_from_switch(instance, policy):
 
 @app.route('/bandwidth', methods=['POST'])
 def add_bandwidth_rule():
-    return jsonify(), 201
+    data = request.get_json()
+    required_keys = ["src_ip", "dst_ip", "rates"]
+
+    if not all(key in data for key in required_keys):
+        return jsonify({"error": "Missing required fields: src_ip, dst_ip, rates"}), 400
+    if len(data["rates"]) != 2:
+        return jsonify({"error": "Rates field must be a list"}), 400
+
+    
+    path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"])
+
+    results = {
+            "path": path,
+            "src_ip": data["src_ip"],
+            "dst_ip": data["dst_ip"],
+            "rates": data["rates"]
+    }
+
+    return jsonify(results), 201
 
 @app.route('/policies', methods=['GET'])
 def get_policies():
@@ -57,7 +75,7 @@ def add_policy():
         return jsonify({"error": "Missing required fields: src_ip, dst_ip, action"}), 400
 
     if data["action"] not in ["allow", "deny"]:
-        return jsonify({"error": "action filed must be allow or deny"})
+        return jsonify({"error": "action filed must be allow or deny"}), 400
     
     policy = {
             "id": policy_counter,

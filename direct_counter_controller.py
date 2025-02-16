@@ -171,10 +171,10 @@ class ARPCache(threading.Thread):
 
     def delete_policy_rule(self, src_ip, dst_ip, action):
         action = 'NoAction' if action == 'allow' else 'drop_packet'
-        src_sw = self.arpdb[src_ip]['swid']
-        dst_sw = self.arpdb[dst_ip]['swid']
-        path = self.topo.get_shortest_paths_between_nodes('s'+str(src_sw),'s'+str(dst_sw))[0]
-        logging.debug("shortest path between switches %s and %s is %s"%(src_sw, dst_sw, path))
+        src_swid = self.arpdb[src_ip]['swid']
+        dst_swid = self.arpdb[dst_ip]['swid']
+        path = self.topo.get_shortest_paths_between_nodes('s'+str(src_swid),'s'+str(dst_swid))[0]
+        logging.debug("shortest path between switches %s and %s is %s"%(src_swid, dst_swid, path))
         i = 1 #index
         logging.debug(f"delete {action} to policy_table from {src_ip} to {dst_ip}")
 
@@ -194,6 +194,20 @@ class ARPCache(threading.Thread):
         print("==============================set_meter_rates start==============================")
         self.con[swid].controller.direct_meter_set_rates(meter_name, [hwsrc], rates=rates)
         print("==============================set_meter_rates done==============================")
+
+    def set_meter_rules(self, src_ip, dst_ip, rates):
+        src_swid = self.arpdb[src_ip]['swid']
+        dst_swid = self.arpdb[dst_ip]['swid']
+        src_hw = self.arpdb[src_ip]['mac']
+        path = self.topo.get_shortest_paths_between_nodes('s'+str(src_swid),'s'+str(dst_swid))[0]
+
+        logging.debug(f"set bandwidths from {src_ip} to {dst_ip} to {rates}")
+
+        for sw in path:
+            swid = int(sw[1:])
+            self.set_meter_rates("my_meter", src_hw, swid, rates)
+            print(f"install meter rates on {swid}")
+        return path
 
 
     def read_meter_stats(self, swid, table_name, hwsrc):
