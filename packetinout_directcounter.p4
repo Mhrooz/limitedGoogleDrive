@@ -36,7 +36,6 @@ struct meta_t {
     bit<1>  is_ext_if;
     bit<16> l4Length; // Layer 4's length
     bit<8>  if_index;
-    bit<32> meter_tag;
 }
 
 header ethernet_t {
@@ -104,6 +103,7 @@ struct metadata {
     /* empty */
     @name(".meta")
     meta_t  meta;
+    bit<32> meter_tag;
 }
 
 @controller_header("packet_in")
