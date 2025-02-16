@@ -282,6 +282,7 @@ class ARPCache(threading.Thread):
                 #print(f"final match = {normal_match}")
 
                 res = self.con[swid].controller.direct_counter_read('rule_counter', normal_match, priority)
+                res = self.con[swid].controller.direct_counter_read('drop_counter', normal_match, priority)
                 print(f"Rule {num}: {e}Byte count: {res[0]}, packet count: {res[1]}\n")
                 num += 1
 

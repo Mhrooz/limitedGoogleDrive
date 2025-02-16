@@ -221,6 +221,7 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
 
     direct_counter(CounterType.packets_and_bytes) rule_counter;
+    direct_counter(CounterType.packets_and_bytes) drop_counter;
 
     direct_meter<bit<32>>(MeterType.packets) my_meter;
     bit<9>drop_port = 0;
@@ -319,6 +320,7 @@ control MyIngress(inout headers hdr,
             NoAction;
         }
         default_action = NoAction;
+        counters = drop_counter;
         size = 16;
     }
     apply {
@@ -333,13 +335,14 @@ control MyIngress(inout headers hdr,
             exit;
         }
         m_read.apply();
-        debug_meter();
         if (smac.apply().hit){
             dmac.apply();
         } 
         policy_table.apply();
-
         m_filter.apply();
+        if(meta.meter_tag == 2){
+            log_msg("RED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        }
         
     }
 }
