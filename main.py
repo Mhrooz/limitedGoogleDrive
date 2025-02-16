@@ -29,13 +29,19 @@ meter_thread = threading.Thread(
 
 meter_thread.start()
 
-# instance.read_direct_counter()
+instance.con[1].controller.table_add("m_read", "m_action", ["52:54:00:83:a7:2d"])
+
+instance.set_meter_rates("my_meter", "52:54:00:83:a7:2d", 1, [(1000000, 10000), (5000000, 20000)])
 
 def add_policy_to_switch(instance, policy):
     instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
 
 def delete_policy_from_switch(instance, policy):
     instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
+
+@app.route('/bandwidth', methods=['POST'])
+def add_bandwidth_rule():
+    return jsonify(), 201
 
 @app.route('/policies', methods=['GET'])
 def get_policies():

@@ -190,6 +190,8 @@ class ARPCache(threading.Thread):
             self.con[swid].controller.table_delete_match("policy_table", match_fields)
             i += 1
 
+    def set_meter_rates(self, meter_name, hwsrc, swid, rates):
+        self.con[swid].controller.direct_meter_set_rates(meter_name, hwsrc, rates=rates)
 
 
     def read_meter_stats(self, swid, table_name, hwsrc):
@@ -200,7 +202,10 @@ class ARPCache(threading.Thread):
             for e in entries:
                 print(e)
             print("==============================read_meter_done ==============================")
-            self.con[swid].controller.direct_meter_get_rates(direct_meter_name="my_meter", match_keys=[hwsrc], prio=0)
+            rates = self.con[swid].controller.direct_meter_get_rates(direct_meter_name="my_meter", match_keys=[hwsrc], prio=0)
+            print(f"Configured CIR: {rates[0][0]} bps, CBS: {rates[0][1]} bytes")
+            print(f"Configured PIR: {rates[1][0]} bps, PBS: {rates[1][1]} bytes")
+
             time.sleep(PERIOD)
 
 
