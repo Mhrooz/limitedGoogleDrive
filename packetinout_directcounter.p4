@@ -312,7 +312,7 @@ control MyIngress(inout headers hdr,
             meta.meter_tag: exact;
         }
         actions = {
-            drop;
+            drop_packet;
             NoAction;
         }
         default_action = NoAction;
