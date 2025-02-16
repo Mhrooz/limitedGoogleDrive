@@ -10,7 +10,7 @@ class AuthController:
         self.users = {
             'admin': {
                 'password': 'admin123',
-                'role': 'administrator'
+                'roles': ['administrator']
             },
             'vip': {
                 'password': 'vip123',
@@ -18,7 +18,7 @@ class AuthController:
             },
             'user': {
                 'password': 'user123',
-                'role': 'user'
+                'roles': ['user']
             }
         }
 
@@ -26,8 +26,8 @@ class AuthController:
         if username in self.users and self.users[username]['password'] == password:
             token = jwt.encode({
                 'user': username,
-                'role': self.users[username]['role'],
-                'exp': datetime.datetime.utcnow() + datetime.datetime.timedelta(hours=24)
+                'roles': self.users[username]['roles'],
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
             }, SECRET_KEY)
             return token
         return None
@@ -38,16 +38,21 @@ class AuthController:
             def decorated(*args, **kwargs):
                 token = request.headers.get('Authorization')
                 if not token:
-                    return jsonify({'message': 'Token is missing'}), 401
+                    return jsonify({'error': 'Token is missing'}), 401
                 
                 try:
                     token = token.split(" ")[1]  # Remove 'Bearer ' prefix
                     data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-                    if roles and data['role'] not in roles:
-                        return jsonify({'message': 'Insufficient permissions'}), 403
-                except:
-                    return jsonify({'message': 'Invalid token'}), 401
-
+                    user_roles = data.get('roles', [])
+                    
+                    if roles and not any(role in roles for role in user_roles):
+                        return jsonify({'error': 'Insufficient permissions'}), 403
+                        
+                except jwt.ExpiredSignatureError:
+                    return jsonify({'error': 'Token has expired'}), 401
+                except jwt.InvalidTokenError:
+                    return jsonify({'error': 'Invalid token'}), 401
+                
                 return f(*args, **kwargs)
             return decorated
         return decorator

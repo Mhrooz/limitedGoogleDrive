@@ -1,39 +1,45 @@
+import os
 from wsgidav.wsgidav_app import WsgiDAVApp
 from wsgidav.fs_dav_provider import FilesystemProvider
+from wsgidav.dir_browser import WsgiDavDirBrowser
+from cheroot import wsgi
 import threading
-from wsgiref.simple_server import make_server
-import os
 
 class WebDAVController:
-    def __init__(self, host="0.0.0.0", port=8001):
-        self.host = host
+    def __init__(self, port=8001):
         self.port = port
-        self.base_path = os.path.join(os.path.dirname(__file__), "shared")
-        os.makedirs(self.base_path, exist_ok=True)
-        
         self.config = {
-            "host": host,
-            "port": port,
+            "host": "0.0.0.0",
+            "port": self.port,
             "provider_mapping": {
-                "/": FilesystemProvider(self.base_path)
+                "/": FilesystemProvider("./shared"),
             },
             "simple_dc": {
                 "user_mapping": {
-                    "*": True  # Allow all users for now, will be restricted by P4
+                    "*": {  # Root folder
+                        "admin": {"password": "admin123"},
+                        "user": {"password": "user123"},
+                    }
                 }
+            },
+            "dir_browser": {
+                "enable": True,
+                "response_handler": WsgiDavDirBrowser,
             },
             "verbose": 1,
         }
         
-        self.app = WsgiDAVApp(self.config)
-        self.server = make_server(host, port, self.app)
-        self.server_thread = None
-
+        # Create shared directory if it doesn't exist
+        if not os.path.exists("./shared"):
+            os.makedirs("./shared")
+            
     def start(self):
-        self.server_thread = threading.Thread(target=self.server.serve_forever)
-        self.server_thread.daemon = True
-        self.server_thread.start()
-
-    def stop(self):
-        if self.server:
-            self.server.shutdown()
+        app = WsgiDAVApp(self.config)
+        server = wsgi.Server(
+            (self.config["host"], self.config["port"]),
+            app,
+            server_name="WebDAV Server"
+        )
+        server_thread = threading.Thread(target=server.start)
+        server_thread.daemon = True
+        server_thread.start()

@@ -13,16 +13,9 @@ policy_counter = 0
 
 instance = direct_counter_controller.ARPCache()
 instance.start()
-# instance.read_direct_counter()
 
 auth = AuthController()
 webdav = WebDAVController()
-
-def add_policy_to_switch(instance, policy):
-    instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
-
-def delete_policy_from_switch(instance, policy):
-    instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -35,7 +28,9 @@ def login():
         return jsonify({"token": token}), 200
     return jsonify({"error": "Invalid credentials"}), 401
 
+# Protect policy endpoints with authentication
 @app.route('/policies', methods=['GET'])
+@auth.token_required()
 def get_policies():
     return jsonify(list(policies.values())), 200
 
@@ -65,6 +60,7 @@ def add_policy():
     return jsonify(policy), 201
 
 @app.route('/policies/<int:policy_id>', methods=['PUT'])
+@auth.token_required(roles=['administrator'])
 def update_policy_by_id(policy_id):
     data = request.get_json()
     if policy_id not in policies:
@@ -88,6 +84,7 @@ def update_policy_by_id(policy_id):
     return jsonify(policy), 200
 
 @app.route('/policies', methods=['PUT'])
+@auth.token_required(roles=['administrator'])
 def upsert_policy():
     global policy_counter
     data = request.get_json()
@@ -122,7 +119,9 @@ def upsert_policy():
         add_policy_to_switch(instance, policy)
 
         return jsonify(policy), 201
+
 @app.route('/policies/<int:policy_id>', methods=['DELETE'])
+@auth.token_required(roles=['administrator'])
 def delete_policy(policy_id):
     if policy_id not in policies:
         return jsonify({"error": "policy does not exist"}, 404)
@@ -136,13 +135,4 @@ if __name__ == '__main__':
     webdav.start()
     app.run(host='0.0.0.0', port=8080, debug=True,
             threaded=True, use_reloader=False)
-
-
-# try:
-#     print("Starting REST API service...")
-#     app.run(debug=True)
-# except KeyboardInterrupt:
-#     print("exit...")
-# finally:
-#     ShutdownAllSwitchConnections()
 
