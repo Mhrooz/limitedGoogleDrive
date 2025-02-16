@@ -192,6 +192,7 @@ class ARPCache(threading.Thread):
 
     def set_meter_rates(self, meter_name, hwsrc, swid, rates):
         print("==============================set_meter_rates start==============================")
+        print(f"rates: {rates}")
         self.con[swid].controller.direct_meter_set_rates(meter_name, [hwsrc], rates=rates)
         print("==============================set_meter_rates done==============================")
 
@@ -202,6 +203,7 @@ class ARPCache(threading.Thread):
         path = self.topo.get_shortest_paths_between_nodes('s'+str(src_swid),'s'+str(dst_swid))[0]
 
         logging.debug(f"set bandwidths from {src_ip} to {dst_ip} to {rates}")
+        rates = [(rates[0][0], rates[0][1]), (rates[1][0], rates[1][1])]
 
         for sw in path:
             swid = int(sw[1:])
