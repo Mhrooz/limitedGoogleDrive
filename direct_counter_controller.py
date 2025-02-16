@@ -191,7 +191,9 @@ class ARPCache(threading.Thread):
             i += 1
 
     def set_meter_rates(self, meter_name, hwsrc, swid, rates):
+        print("==============================set_meter_rates start==============================")
         self.con[swid].controller.direct_meter_set_rates(meter_name, hwsrc, rates=rates)
+        print("==============================set_meter_rates done==============================")
 
 
     def read_meter_stats(self, swid, table_name, hwsrc):
