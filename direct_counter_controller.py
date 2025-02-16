@@ -192,13 +192,15 @@ class ARPCache(threading.Thread):
 
 
 
-    def read_meter_stats(self, swid, table_name):
+    def read_meter_stats(self, swid, table_name, hwsrc):
         while True:
+
             entries, default_entry = self.con[swid].controller.read_all_table_entries(table_name)
             print("==============================read_meter_stats==============================")
             for e in entries:
                 print(e)
             print("==============================read_meter_done ==============================")
+            self.con[swid].controller.direct_meter_get_rates(direct_meter_name="my_meter", match_keys=[hwsrc], prio=0)
             time.sleep(PERIOD)
 
 
