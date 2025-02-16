@@ -216,7 +216,6 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 **************  I N G R E S S   P R O C E S S I N G   *******************
 *************************************************************************/
 
-register<bit<32>>(1) token_bucket_reg;
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
@@ -233,6 +232,10 @@ control MyIngress(inout headers hdr,
         my_meter.read(meta.meter_tag);
     }
 
+    action debug_meter() {
+        my_meter.read(meta.meter_tag);
+        debug(meta.meter_tag);  
+    }
 
     action queue_packet(){
         send_to_cpu();
@@ -330,6 +333,7 @@ control MyIngress(inout headers hdr,
             exit;
         }
         m_read.apply();
+        debug_meter();
         if (smac.apply().hit){
             dmac.apply();
         } 
