@@ -227,8 +227,12 @@ control MyIngress(inout headers hdr,
     bit<9>drop_port = 0;
     action send_to_cpu() {
         standard_metadata.egress_spec = CPU_PORT;
+    }
+
+    action m_action(){
         my_meter.read(meta.meter_tag);
     }
+
 
     action queue_packet(){
         send_to_cpu();
@@ -252,6 +256,19 @@ control MyIngress(inout headers hdr,
         standard_metadata.egress_spec = drop_port;
     }
 
+    table m_read{
+        key = {
+            hdr.ethernet.srcAddr: exact;
+        }
+
+        actions = {
+            NoAction;
+            m_action;
+        }
+        size = 256;
+        meters = my_meter;
+        default_action = NoAction;
+    }
     table smac {
         key = {
             hdr.ethernet.srcAddr: exact;
@@ -261,7 +278,6 @@ control MyIngress(inout headers hdr,
             NoAction;
         }
         size = 256;
-        meters = my_meter;
         default_action = send_to_cpu;
     }
 
@@ -302,6 +318,7 @@ control MyIngress(inout headers hdr,
             hdr.packet_out.setInvalid();
             exit;
         }
+        m_read.apply();
         if (smac.apply().hit){
             dmac.apply();
         } 

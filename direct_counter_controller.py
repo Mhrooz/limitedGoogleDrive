@@ -99,6 +99,7 @@ class ARPCache(threading.Thread):
             self.arpdb[arpp.psrc] = {'swid':swid, 'mac':arpp.hwsrc, 'port': port}
             #install rule for ARP message on the same switch
             self.con[swid].controller.table_add("smac", "NoAction", [arpp.hwsrc])
+            self.con[swid].controller.table_add("m_read", "m_action", [arpp.hwsrc])
             self.con[swid].controller.table_add("dmac", "forward", [arpp.hwsrc], [str(port)])
         if arpp.op == 1:
             logging.debug("ARP Request")
@@ -148,8 +149,10 @@ class ARPCache(threading.Thread):
                 port = self.topo.node_to_node_port_num(sw, path[i])
                 self.con[swid].controller.table_add("dmac", "forward", [dst_mac_addr], [str(port)])
                 self.con[swid].controller.table_add("smac", "NoAction", [src_mac_addr])
+                self.con[swid].controller.table_add("m_read", "m_action", [src_mac_addr])
             else:#last node in the path
                 self.con[swid].controller.table_add("smac", "NoAction", [src_mac_addr])
+                self.con[swid].controller.table_add("m_read", "m_action", [src_mac_addr])
                 pass #already installed the entry for dmac table when packet-in for ARP Request arrived
             i += 1
     def install_policy_rule(self, src_ip, dst_ip, action):
