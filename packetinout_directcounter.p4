@@ -226,6 +226,7 @@ control MyIngress(inout headers hdr,
     bit<9>drop_port = 0;
     action send_to_cpu() {
         standard_metadata.egress_spec = CPU_PORT;
+        my_meter.read(meta.meter_tag);
     }
 
     action queue_packet(){
