@@ -190,12 +190,13 @@ class ARPCache(threading.Thread):
 
 
     def read_meter_stats(self, swid, table_name):
-        entries, default_entry = self.con[swid].controller.read_all_table_entries(table_name)
-        print("==============================read_meter_stats==============================")
-        for e in entries:
-            print(e)
-        print("==============================read_meter_done ==============================")
-        time.sleep(PERIOD)
+        while True:
+            entries, default_entry = self.con[swid].controller.read_all_table_entries(table_name)
+            print("==============================read_meter_stats==============================")
+            for e in entries:
+                print(e)
+            print("==============================read_meter_done ==============================")
+            time.sleep(PERIOD)
 
 
     def read_direct_counter(self):
