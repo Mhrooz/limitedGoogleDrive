@@ -18,7 +18,7 @@
             "isSwitch": true,
             "device_id": 1,
             "grpc_port": 50051,
-            "grpc_ip": "192.168.0.51",
+            "grpc_ip": "172.16.0.51",
             "json_path": "/root/p4/build/packetinout.json",
             "p4rt_path": "/root/p4/build/packetinout.p4info.txt",
             "id": "s1"
@@ -29,7 +29,7 @@
             "isSwitch": true,
             "device_id": 2,
             "grpc_port": 50051,
-            "grpc_ip": "192.168.0.52",
+            "grpc_ip": "172.16.0.52",
             "json_path": "/root/p4/build/packetinout.json",
             "p4rt_path": "/root/p4/build/packetinout.p4info.txt",
             "id": "s2"
@@ -40,7 +40,7 @@
             "isSwitch": true,
             "device_id": 3,
             "grpc_port": 50051,
-            "grpc_ip": "192.168.0.53",
+            "grpc_ip": "172.16.0.53",
             "json_path": "/root/p4/build/packetinout.json",
             "p4rt_path": "/root/p4/build/packetinout.p4info.txt",
             "id": "s3"
