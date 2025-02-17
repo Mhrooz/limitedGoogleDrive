@@ -100,7 +100,7 @@ class ARPCache(threading.Thread):
             #install rule for ARP message on the same switch
             self.con[swid].controller.table_add("smac", "NoAction", [arpp.hwsrc])
             self.con[swid].controller.table_add("m_read", "m_action", [arpp.hwsrc])
-            self.con[swid].controller.table_add("m_filter", "drop_packet", [2])
+            self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
             self.con[swid].controller.table_add("dmac", "forward", [arpp.hwsrc], [str(port)])
         if arpp.op == 1:
             logging.debug("ARP Request")
@@ -151,11 +151,11 @@ class ARPCache(threading.Thread):
                 self.con[swid].controller.table_add("dmac", "forward", [dst_mac_addr], [str(port)])
                 self.con[swid].controller.table_add("smac", "NoAction", [src_mac_addr])
                 self.con[swid].controller.table_add("m_read", "m_action", [src_mac_addr])
-                self.con[swid].controller.table_add("m_filter", "drop_packet", [2])
+                self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
             else:#last node in the path
                 self.con[swid].controller.table_add("smac", "NoAction", [src_mac_addr])
                 self.con[swid].controller.table_add("m_read", "m_action", [src_mac_addr])
-                self.con[swid].controller.table_add("m_filter", "drop_packet", [2])
+                self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
                 pass #already installed the entry for dmac table when packet-in for ARP Request arrived
             i += 1
     def install_policy_rule(self, src_ip, dst_ip, action):
@@ -233,10 +233,15 @@ class ARPCache(threading.Thread):
 
     def read_direct_counter(self):
         table_name = 'dmac'
+        table_name2 = 'm_filter'
+	
         swid = 1 # read the direct counter of table dmac (destination MAC) of switch 1
         while True:
             #self.con[1].controller.dump_table('dmac')
+            print(f"table1: {table_name}")
             entries, default_entry = self.con[swid].controller.read_all_table_entries(table_name)
+            print(f"table1: {table_name}")
+            entries2, default_entry2 = self.con[swid].controller.read_all_table_entries(table_name2)
             #print(f"Table {table_name} contains {len(entries)} entries")
             #for e in entries:
             #    print(e)
@@ -244,7 +249,9 @@ class ARPCache(threading.Thread):
             #print(default_entry)
 
             mfs = self.con[swid].controller.context.get_table(table_name).match_fields #mfs: match fields
+            mfs2 = self.con[swid].controller.context.get_table(table_name2).match_fields #mfs: match fields
             num = 1
+            print(f"table1: {table_name}")
             for e in entries:
                 normal_match = [] #normal match format to be fed in the function direct_counter_read
                 nmf = None # normal match field
@@ -282,11 +289,54 @@ class ARPCache(threading.Thread):
                 #print(f"final match = {normal_match}")
 
                 res = self.con[swid].controller.direct_counter_read('rule_counter', normal_match, priority)
-                res2 = self.con[swid].controller.direct_counter_read('drop_counter', ['2'], priority)
                 print(f"Rule {num}: {e}Byte count: {res[0]}, packet count: {res[1]}\n")
                 if(isinstance(res, dict)):
                     print(f"Rule {num}: {e}Byte count: {res2[0]}, packet count: {res2[1]}\n")
                 num += 1
+            print(f"table2: {table_name2}")
+			
+            for e in entries2:
+                normal_match = [] #normal match format to be fed in the function direct_counter_read
+                nmf = None # normal match field
+                #print(e)
+                match = e.match
+                #action = e.action
+                priority = e.priority
+                #print(f"match = {match}")
+                #print(f"action = {action}")
+                #print(f"priority = {priority}")
+                #print(match._mk)
+                #print(match._mk.keys())
+                #print(match._mk.values())
+                for mf in match._mk.values(): #match field
+                    #print(mf)
+                    #print(f"field_id = {mf.field_id}")
+                    #print(f"value = {mf.exact.value}")
+                    fid = mf.field_id
+                    if mfs[fid-1].match_type == p4info_pb2.MatchField.EXACT:
+                        nmf = f"{int.from_bytes(mf.exact.value, 'big')}"
+                    if mfs[fid-1].match_type == p4info_pb2.MatchField.RANGE:
+                        nmf = f"{int.from_bytes(mf.range.low,'big')}..{int.from_bytes(mf.range.high,'big')}"
+                    if mfs[fid-1].match_type == p4info_pb2.MatchField.TERNARY:
+                        try:
+                            nmf = f"{IPv4Address(mf.ternary.value)}&&&{IPv4Address(mf.ternary.mask)}"
+                        except AddressValueError:
+                            print("Error parsing ip address from idle timeout notification")
+                    if mfs[fid-1].match_type == p4info_pb2.MatchField.LPM:
+                        try:
+                            nmf = f"{IPv4Address(mf.lpm.prefix)}/{int.from_bytes(mf.lpm.length,'big')}"
+                        except AddressValueError:
+                            print("Error parsing ip address from idle timeout notification")
+                    #print(f"converted match field = {nmf}")
+                    normal_match.append(nmf)
+                #print(f"final match = {normal_match}")
+
+                res = self.con[swid].controller.direct_counter_read('drop_counter', normal_match, priority)
+                print(f"Rule {num}: {e}Byte count: {res[0]}, packet count: {res[1]}\n")
+                if(isinstance(res, dict)):
+                    print(f"Rule {num}: {e}Byte count: {res2[0]}, packet count: {res2[1]}\n")
+                num += 1
+
 
             print("=============================================================")
             time.sleep(PERIOD)
