@@ -193,10 +193,10 @@ class ARPCache(threading.Thread):
             self.con[swid].controller.table_delete_match("policy_table", match_fields)
             i += 1
 
-    def set_meter_rates(self, meter_name, hwsrc, swid, rates):
+    def set_meter_rates(self, meter_name, hwsrc, swid, rates, src_ip, dst_ip, src_port, dst_port):
         print("==============================set_meter_rates start==============================")
         print(f"rates: {rates}")
-        self.con[swid].controller.direct_meter_set_rates(meter_name, [hwsrc], rates=rates)
+        self.con[swid].controller.direct_meter_set_rates(meter_name, [hwsrc, src_ip, dst_ip, src_port, dst_port], rates=rates)
         print("==============================set_meter_rates done==============================")
 
     def set_meter_rules(self, src_ip, dst_ip, rates, src_port, dst_port):
@@ -211,7 +211,7 @@ class ARPCache(threading.Thread):
         for sw in path:
             swid = int(sw[1:])
             self.con[swid].controller.table_add("m_read", "m_action", [src_hw, src_ip, dst_ip, src_port, dst_port])
-            self.set_meter_rates("my_meter", src_hw, swid, rates)
+            self.set_meter_rates("my_meter", src_hw, swid, rates, src_ip, dst_ip, src_port, dst_port)
             print(f"install meter rates on {swid}")
         return path
 
