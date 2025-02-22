@@ -99,8 +99,8 @@ class ARPCache(threading.Thread):
             self.arpdb[arpp.psrc] = {'swid':swid, 'mac':arpp.hwsrc, 'port': port}
             #install rule for ARP message on the same switch
             self.con[swid].controller.table_add("smac", "NoAction", [arpp.hwsrc])
-            self.con[swid].controller.table_add("m_read", "m_action", [arpp.hwsrc])
-            self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
+            # self.con[swid].controller.table_add("m_read", "m_action", [arpp.hwsrc])
+            # self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
             self.con[swid].controller.table_add("dmac", "forward", [arpp.hwsrc], [str(port)])
         if arpp.op == 1:
             logging.debug("ARP Request")
@@ -150,12 +150,12 @@ class ARPCache(threading.Thread):
                 port = self.topo.node_to_node_port_num(sw, path[i])
                 self.con[swid].controller.table_add("dmac", "forward", [dst_mac_addr], [str(port)])
                 self.con[swid].controller.table_add("smac", "NoAction", [src_mac_addr])
-                self.con[swid].controller.table_add("m_read", "m_action", [src_mac_addr])
-                self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
+                # self.con[swid].controller.table_add("m_read", "m_action", [src_mac_addr])
+                # self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
             else:#last node in the path
                 self.con[swid].controller.table_add("smac", "NoAction", [src_mac_addr])
-                self.con[swid].controller.table_add("m_read", "m_action", [src_mac_addr])
-                self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
+                # self.con[swid].controller.table_add("m_read", "m_action", [src_mac_addr])
+                # self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
                 pass #already installed the entry for dmac table when packet-in for ARP Request arrived
             i += 1
     def install_policy_rule(self, src_ip, dst_ip, action):
@@ -199,7 +199,7 @@ class ARPCache(threading.Thread):
         self.con[swid].controller.direct_meter_set_rates(meter_name, [hwsrc], rates=rates)
         print("==============================set_meter_rates done==============================")
 
-    def set_meter_rules(self, src_ip, dst_ip, rates):
+    def set_meter_rules(self, src_ip, dst_ip, rates, src_port, dst_port):
         src_swid = self.arpdb[src_ip]['swid']
         dst_swid = self.arpdb[dst_ip]['swid']
         src_hw = self.arpdb[src_ip]['mac']
@@ -210,6 +210,7 @@ class ARPCache(threading.Thread):
 
         for sw in path:
             swid = int(sw[1:])
+            self.con[swid].controller.table_add("m_read", "m_action", [src_hw, src_ip, dst_ip, src_port, dst_port])
             self.set_meter_rates("my_meter", src_hw, swid, rates)
             print(f"install meter rates on {swid}")
         return path

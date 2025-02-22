@@ -248,6 +248,10 @@ control MyIngress(inout headers hdr,
     table m_read{
         key = {
             hdr.ethernet.srcAddr: exact;
+            meta.meta.ipv4_sa: exact;
+            meta.meta.ipv4_da: exact;
+            meta.meta.tcp_sp: exact;
+            meta.meta.tcp_dp: exact;
         }
 
         actions = {
