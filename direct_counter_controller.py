@@ -193,13 +193,13 @@ class ARPCache(threading.Thread):
             self.con[swid].controller.table_delete_match("policy_table", match_fields)
             i += 1
 
-    def set_meter_rates(self, meter_name, hwsrc, swid, rates, src_ip, dst_ip, src_port, dst_port):
+    def set_meter_rates(self, meter_name, hwsrc, swid, rates, src_ip, dst_ip,dst_port):
         print("==============================set_meter_rates start==============================")
         print(f"rates: {rates}")
-        self.con[swid].controller.direct_meter_set_rates(meter_name, [hwsrc, src_ip, dst_ip, src_port, dst_port], rates=rates)
+        self.con[swid].controller.direct_meter_set_rates(meter_name, [hwsrc, src_ip, dst_ip, dst_port], rates=rates)
         print("==============================set_meter_rates done==============================")
 
-    def set_meter_rules(self, src_ip, dst_ip, rates, src_port, dst_port):
+    def set_meter_rules(self, src_ip, dst_ip, rates, dst_port):
         src_swid = self.arpdb[src_ip]['swid']
         dst_swid = self.arpdb[dst_ip]['swid']
         src_hw = self.arpdb[src_ip]['mac']
@@ -210,13 +210,13 @@ class ARPCache(threading.Thread):
 
         for sw in path:
             swid = int(sw[1:])
-            self.con[swid].controller.table_add("m_read", "m_action", [src_hw, src_ip, dst_ip, src_port, dst_port])
-            self.set_meter_rates("my_meter", src_hw, swid, rates, src_ip, dst_ip, src_port, dst_port)
+            self.con[swid].controller.table_add("m_read", "m_action", [src_hw, src_ip, dst_ip, dst_port])
+            self.set_meter_rates("my_meter", src_hw, swid, rates, src_ip, dst_ip,  dst_port)
             print(f"install meter rates on {swid}")
         return path
 
 
-    def read_meter_stats(self, swid, table_name, hwsrc):
+    def read_meter_stats(self, swid, table_name, args):
         while True:
 
             entries, default_entry = self.con[swid].controller.read_all_table_entries(table_name)
@@ -224,7 +224,7 @@ class ARPCache(threading.Thread):
             for e in entries:
                 print(e)
             print("==============================read_meter_done ==============================")
-            rates = self.con[swid].controller.direct_meter_get_rates(direct_meter_name="my_meter", match_keys=[hwsrc], prio=0)
+            rates = self.con[swid].controller.direct_meter_get_rates(direct_meter_name="my_meter", match_keys=args, prio=0)
             if(isinstance(rates, list)):
                 print(f"Configured CIR: {rates[0][0]} bps, CBS: {rates[0][1]} bytes")
                 print(f"Configured PIR: {rates[1][0]} bps, PBS: {rates[1][1]} bytes")

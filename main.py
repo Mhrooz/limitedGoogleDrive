@@ -23,7 +23,7 @@ counter_thread.start()
 
 meter_thread = threading.Thread(
         target = instance.read_meter_stats,
-        args = (1, "m_read", "00:16:3e:00:00:02"),
+        args = (1, "m_read", ["00:16:3e:00:00:02", "172.16.1.1", "172.16.1.2", "8080", "22"]),
         daemon=True
 )
 
