@@ -291,6 +291,7 @@ control MyIngress(inout headers hdr,
         key = {
             hdr.ipv4.srcAddr: exact;
             hdr.ipv4.dstAddr: exact;
+            meta.meta.tcp_dp: exact;
         }
         actions = {
             NoAction;

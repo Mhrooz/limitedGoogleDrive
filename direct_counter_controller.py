@@ -158,7 +158,7 @@ class ARPCache(threading.Thread):
                 # self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
                 pass #already installed the entry for dmac table when packet-in for ARP Request arrived
             i += 1
-    def install_policy_rule(self, src_ip, dst_ip, action):
+    def install_policy_rule(self, src_ip, dst_ip, dst_port, action):
         logging.debug("install policy rule....")
         action = 'NoAction' if action == 'allow' else 'drop_packet'
         src_sw = self.arpdb[src_ip]['swid']
@@ -169,10 +169,10 @@ class ARPCache(threading.Thread):
         logging.debug(f"add {action} to policy_table from {src_ip} to {dst_ip}")
         for sw in path:
             swid = int(sw[1:]) #e.g., sw = 's10', swid = 10
-            self.con[swid].controller.table_add("policy_table", action, [src_ip, dst_ip])
+            self.con[swid].controller.table_add("policy_table", action, [src_ip, dst_ip, dst_port])
             i += 1
 
-    def delete_policy_rule(self, src_ip, dst_ip, action):
+    def delete_policy_rule(self, src_ip, dst_ip, dst_port, action):
         action = 'NoAction' if action == 'allow' else 'drop_packet'
         src_swid = self.arpdb[src_ip]['swid']
         dst_swid = self.arpdb[dst_ip]['swid']
@@ -184,7 +184,7 @@ class ARPCache(threading.Thread):
         def ip_to_bytes(ip_str):
             return socket.inet_aton(ip_str)
         # match_fields = [ ip_to_bytes(src_ip), ip_to_bytes(dst_ip) ]
-        match_fields = [src_ip, dst_ip]
+        match_fields = [src_ip, dst_ip, dst_port]
 
         logging.debug(f"match_fields: {match_fields}")
 

@@ -34,7 +34,7 @@ meter_thread.start()
 # instance.set_meter_rates("my_meter", "52:54:00:83:a7:2d", 1, [(1000000, 10000), (5000000, 20000)])
 
 def add_policy_to_switch(instance, policy):
-    instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
+    instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["dst_port"], policy["action"])
 
 def delete_policy_from_switch(instance, policy):
     instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
@@ -70,7 +70,7 @@ def get_policies():
 def add_policy():
     global policy_counter
     data = request.get_json()
-    required_keys = ["src_ip", "dst_ip", "action"]
+    required_keys = ["src_ip", "dst_ip", "dst_port", "action"]
 
     if not all(key in data for key in required_keys):
         return jsonify({"error": "Missing required fields: src_ip, dst_ip, action"}), 400
@@ -82,6 +82,7 @@ def add_policy():
             "id": policy_counter,
             "src_ip": data["src_ip"],
             "dst_ip": data["dst_ip"],
+            "dst_port": data["dst_port"],
             "action": data["action"]
     }
     policies[policy_counter] = policy
