@@ -119,7 +119,7 @@ def upsert_bandwidth():
         bandwidths_rule_counter += 1
         return jsonify(results), 201
 
-@app.route('/bandwidth/<int:bandwidths_rule_id', methods=['DELETE'])
+@app.route('/bandwidth/<int:bandwidths_rule_id>', methods=['DELETE'])
 def del_bandwidth_rule(bandwidths_rule_id):
     if bandwidths_rule_id not in bandwidths_rule:
         return jsonify({"error": "bandwidths_rule does not exist"}), 404
