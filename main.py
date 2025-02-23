@@ -104,6 +104,7 @@ def upsert_bandwidth():
                 "rates": data["rates"],
                 "dst_port": data["dst_port"]
         }
+        bandwidths_rule[entry_id] = results
         return jsonify(results), 201
     else:
         path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["dst_port"])
