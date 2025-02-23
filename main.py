@@ -26,7 +26,7 @@ counter_thread.start()
 
 meter_thread = threading.Thread(
         target = instance.read_meter_stats,
-        args = (1, "m_read", ["00:16:3e:00:00:02", "172.16.1.1", "172.16.1.2", "8080", "22"]),
+        args = (1, "m_read", ["00:16:3e:00:00:02", "172.16.1.1", "172.16.1.2", "22"]),
         daemon=True
 )
 
@@ -53,7 +53,7 @@ def add_bandwidth_rule():
     if len(data["rates"]) != 2:
         return jsonify({"error": "Rates field must be a list"}), 400
 
-    for entry in bandwidths_rule:
+    for entry in bandwidths_rule.values():
         if entry["src_ip"] == data["src_ip"] and entry["dst_ip"] == data["dst_ip"] and entry["dst_port"] == data["dst_port"]:
             return jsonify({"error": "the rules is existed, please use PUT method to update the rule"}), 409
     
