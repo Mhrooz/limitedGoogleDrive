@@ -37,10 +37,12 @@ meter_thread.start()
 # instance.set_meter_rates("my_meter", "52:54:00:83:a7:2d", 1, [(1000000, 10000), (5000000, 20000)])
 
 def add_policy_to_switch(instance, policy):
-    instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["dst_port"], policy["action"])
+    result = instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["dst_port"], policy["action"])
+    return result
 
 def delete_policy_from_switch(instance, policy):
-    instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["dst_port"], policy["action"])
+    result = instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["dst_port"], policy["action"])
+    return result
 
 @app.route('/bandwidth', methods=['POST'])
 def add_bandwidth_rule():
@@ -58,6 +60,8 @@ def add_bandwidth_rule():
             return jsonify({"error": "the rules is existed, please use PUT method to update the rule"}), 409
     
     path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["dst_port"])
+    if path == -1:
+        return jsonify({"error": "the IP is not known in the network"}), 404
 
     results = {
             "id": bandwidths_rule_counter,
@@ -96,6 +100,8 @@ def upsert_bandwidth():
 
     if existing_bandwidth_rule is not None:
         path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["dst_port"])
+        if path == -1:
+            return jsonify({"error": "the IP is not known in the network"}), 404
         results = {
                 "id": entry_id,
                 "path": path,
@@ -108,6 +114,8 @@ def upsert_bandwidth():
         return jsonify(results), 201
     else:
         path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["dst_port"])
+        if path == -1:
+            return jsonify({"error": "the IP is not known in the network"}), 404
         results = {
                 "id": bandwidths_rule_counter,
                 "path": path,
@@ -125,7 +133,9 @@ def del_bandwidth_rule(bandwidths_rule_id):
     if bandwidths_rule_id not in bandwidths_rule:
         return jsonify({"error": "bandwidths_rule does not exist"}), 404
     entry = bandwidths_rule[bandwidths_rule_id]
-    instance.delete_bandwidth_rule(entry["src_ip"], entry["dst_ip"], entry["dst_port"])
+    return_code = instance.delete_bandwidth_rule(entry["src_ip"], entry["dst_ip"], entry["dst_port"])
+    if return_code == -1:
+        return jsonify({"error": "The IP address is not known in the network"}), 404
     del bandwidths_rule[bandwidths_rule_id]
     return jsonify({"message": "bandwidths_rule deleted"}), 201
 
@@ -168,7 +178,9 @@ def update_policy_by_id(policy_id):
     if policy_id not in policies:
            return jsonify({"error": "policy does not exist"})
     print("=================start del==================================")
-    delete_policy_from_switch(instance, policies[policy_id])
+    result_code = delete_policy_from_switch(instance, policies[policy_id])
+    if result_code == -1:
+        return jsonify({"error": "The IP address is not known by the network"}), 404
     print("============================================================")
 
     policy = policies[policy_id]
@@ -184,7 +196,9 @@ def update_policy_by_id(policy_id):
         policy["action"] = data["action"]
     policies[policy_id] = policy
 
-    add_policy_to_switch(instance, policy)
+    result_code = add_policy_to_switch(instance, policy)
+    if result_code == -1:
+        return jsonify({"error": "The IP address is not known by the network"}), 404
     return jsonify(policy), 200
 
 @app.route('/policies', methods=['PUT'])
@@ -206,9 +220,13 @@ def upsert_policy():
             break
 
     if existing_policy is not None:
-        delete_policy_from_switch(instance, existing_policy)
+        result_code = delete_policy_from_switch(instance, existing_policy)
+        if result_code == -1:
+            return jsonify({"error": "The IP address is not known by the network"}), 404
         existing_policy["action"] = data["action"]
-        add_policy_to_switch(instance, existing_policy)
+        result_code = add_policy_to_switch(instance, existing_policy)
+        if result_code == -1:
+            return jsonify({"error": "The IP address is not known by the network"}), 404
         return jsonify(existing_policy), 200
     else:
         policy = {
@@ -220,7 +238,9 @@ def upsert_policy():
         }
         policies[policy_counter] = policy
         policy_counter += 1
-        add_policy_to_switch(instance, policy)
+        result_code = add_policy_to_switch(instance, policy)
+        if result_code == -1:
+            return jsonify({"error": "The IP address is not known by the network"}), 404
 
         return jsonify(policy), 201
 @app.route('/policies/<int:policy_id>', methods=['DELETE'])
@@ -228,7 +248,9 @@ def delete_policy(policy_id):
     if policy_id not in policies:
         return jsonify({"error": "policy does not exist"}, 404)
 
-    delete_policy_from_switch(instance, policies[policy_id])
+    result_code = delete_policy_from_switch(instance, policies[policy_id])
+    if result_code == -1:
+        return jsonify({"error": "The IP address is not known by the network"}), 404
     del policies[policy_id]
     return jsonify({"message": "policies deleted"}), 200
 
