@@ -1,0 +1,2 @@
+This is a test file for uploading to the WebDAV server.
+The server should store this file in its shared directory.
