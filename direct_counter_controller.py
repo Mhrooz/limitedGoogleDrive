@@ -212,6 +212,7 @@ class ARPCache(threading.Thread):
             swid = int(sw[1:])
             self.con[swid].controller.table_add("m_read", "m_action", [src_hw, src_ip, dst_ip, dst_port])
             self.set_meter_rates("my_meter", src_hw, swid, rates, src_ip, dst_ip,  dst_port)
+            self.con[swid].controller.table_add("m_filter", "drop_packet", ['2'])
             print(f"install meter rates on {swid}")
         return path
 

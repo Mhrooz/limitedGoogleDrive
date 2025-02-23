@@ -42,21 +42,22 @@ def delete_policy_from_switch(instance, policy):
 @app.route('/bandwidth', methods=['POST'])
 def add_bandwidth_rule():
     data = request.get_json()
-    required_keys = ["src_ip", "dst_ip", "rates", "src_port", "dst_port"]
+    required_keys = ["src_ip", "dst_ip", "rates", "dst_port"]
 
     if not all(key in data for key in required_keys):
-        return jsonify({"error": "Missing required fields: src_ip, dst_ip, rates"}), 400
+        return jsonify({"error": "Missing required fields: src_ip, dst_ip, rates, dst_port"}), 400
     if len(data["rates"]) != 2:
         return jsonify({"error": "Rates field must be a list"}), 400
 
     
-    path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["src_port"], data["dst_port"])
+    path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["dst_port"])
 
     results = {
             "path": path,
             "src_ip": data["src_ip"],
             "dst_ip": data["dst_ip"],
-            "rates": data["rates"]
+            "rates": data["rates"],
+            "dst_port": data["dst_port"]
     }
 
     return jsonify(results), 201
