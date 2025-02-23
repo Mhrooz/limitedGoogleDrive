@@ -37,7 +37,7 @@ def add_policy_to_switch(instance, policy):
     instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["dst_port"], policy["action"])
 
 def delete_policy_from_switch(instance, policy):
-    instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["action"])
+    instance.delete_policy_rule(policy["src_ip"], policy["dst_ip"], policy["dst_port"], policy["action"])
 
 @app.route('/bandwidth', methods=['POST'])
 def add_bandwidth_rule():
@@ -118,7 +118,7 @@ def update_policy_by_id(policy_id):
 def upsert_policy():
     global policy_counter
     data = request.get_json()
-    required_keys = ["src_ip", "dst_ip", "action"]
+    required_keys = ["src_ip", "dst_ip", "dst_port", "action"]
 
     if not all(key in data for key in required_keys):
         return jsonify({"error": "Missing required fields: src_ip, dst_ip, action"}), 400
@@ -128,7 +128,7 @@ def upsert_policy():
     
     existing_policy = None
     for policy in policies.values():
-        if policy["src_ip"] == data["src_ip"] and policy["dst_ip"] == data["dst_ip"]:
+        if policy["src_ip"] == data["src_ip"] and policy["dst_ip"] == data["dst_ip"] and policy["dst_port"] == data["dst_port"]:
             existing_policy = policy
             break
 
@@ -142,6 +142,7 @@ def upsert_policy():
                 "id": policy_counter,
                 "src_ip": data["src_ip"],
                 "dst_ip": data["dst_ip"],
+                "dst_port": data["dst_port"],
                 "action": data["action"],
         }
         policies[policy_counter] = policy
