@@ -4,6 +4,7 @@ import webdav3.client as webdav
 from rich.console import Console
 from rich.table import Table
 import json
+import os
 
 console = Console()
 
@@ -77,6 +78,29 @@ class Client:
         except Exception as e:
             console.print(f"Error listing files: {e}", style="red")
 
+    def upload_file(self, local_path, remote_path="/"):
+        if not self.webdav_client:
+            console.print("Not connected. Please connect first.", style="red")
+            return False
+        
+        try:
+            # Ensure local file exists
+            if not os.path.exists(local_path):
+                console.print(f"Local file {local_path} not found", style="red")
+                return False
+
+            # Get just the filename if remote_path is a directory
+            if remote_path.endswith('/'):
+                remote_path = remote_path + os.path.basename(local_path)
+
+            with console.status(f"Uploading {local_path} to {remote_path}..."):
+                self.webdav_client.upload_file(local_path, remote_path)
+            console.print(f"Successfully uploaded {local_path}", style="green")
+            return True
+        except Exception as e:
+            console.print(f"Error uploading file: {e}", style="red")
+            return False
+
 @click.group()
 def cli():
     pass
@@ -117,6 +141,17 @@ def connect():
 def ls(path):
     client = Client()
     client.list_files(path)
+
+@cli.command()
+@click.argument('local_path', type=click.Path(exists=True))
+@click.argument('remote_path', default="/")
+def upload(local_path, remote_path):
+    """Upload a file to the server.
+    LOCAL_PATH is the path to the file on your computer
+    REMOTE_PATH is the destination path on the server (default: /)
+    """
+    client = Client()
+    client.upload_file(local_path, remote_path)
 
 if __name__ == '__main__':
     cli()
