@@ -9,13 +9,31 @@ import os
 console = Console()
 
 class Client:
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Client, cls).__new__(cls)
+            cls._instance.initialized = False
+        return cls._instance
+
     def __init__(self):
-        self.config_file = 'client_config.json'
-        self.api_url = None
-        self.webdav_url = None
-        self.token = None
-        self.webdav_client = None
-        self.load_config()
+        if not self.initialized:
+            self.config_file = 'client_config.json'
+            self.api_url = None
+            self.webdav_url = None
+            self.token = None
+            self.webdav_client = None
+            self.load_config()
+            self.initialized = True
+            # Auto-connect if we have last server and credentials
+            if self.config.get('last_server') and self.config.get('credentials'):
+                creds = self.config['credentials']
+                self.connect(
+                    self.config['last_server'],
+                    creds.get('username'),
+                    creds.get('password')
+                )
 
     def load_config(self):
         try:
@@ -102,13 +120,13 @@ class Client:
             return False
 
 @click.group()
-def cli():
-    pass
+@click.pass_context
+def cli(ctx):
+    ctx.obj = Client()
 
 @cli.command()
-def connect():
-    client = Client()
-    
+@click.pass_obj
+def connect(client):
     # Check for last server
     last_server = client.config.get('last_server')
     if last_server:
@@ -137,20 +155,20 @@ def connect():
         console.print("Connection failed!", style="red")
 
 @cli.command()
+@click.pass_obj
 @click.argument('path', default="/")
-def ls(path):
-    client = Client()
+def ls(client, path):
     client.list_files(path)
 
 @cli.command()
+@click.pass_obj
 @click.argument('local_path', type=click.Path(exists=True))
 @click.argument('remote_path', default="/")
-def upload(local_path, remote_path):
+def upload(client, local_path, remote_path):
     """Upload a file to the server.
     LOCAL_PATH is the path to the file on your computer
     REMOTE_PATH is the destination path on the server (default: /)
     """
-    client = Client()
     client.upload_file(local_path, remote_path)
 
 if __name__ == '__main__':
