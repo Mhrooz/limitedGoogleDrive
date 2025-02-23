@@ -98,29 +98,53 @@ class Client:
 
     def upload_file(self, local_path, remote_path="/"):
         if not self.webdav_client:
-            console.print("Not connected. Please connect first.", style="red")
-            return False
+            if not self.reconnect():
+                console.print("Not connected. Please connect first.", style="red")
+                return False
         
         try:
-            # Expand user path (~ to full home directory)
+            # Path handling
             local_path = os.path.expanduser(local_path)
-            # Convert to absolute path if relative
-            if not os.path.isabs(local_path):
-                local_path = os.path.abspath(local_path)
+            local_path = os.path.abspath(local_path)
+            console.print(f"Looking for file at: {local_path}", style="blue")
 
-#
+            if not os.path.exists(local_path):
+                console.print(f"File not found at: {local_path}", style="red")
+                console.print(f"Current directory: {os.getcwd()}", style="blue")
+                console.print(f"Available files:", style="blue")
+                os.system('ls -la')
+                return False
 
-            # Get just the filename if remote_path is a directory
-            if remote_path.endswith('/'):
-                remote_path = remote_path + os.path.basename(local_path)
+            # Get just the filename for remote path
+            filename = os.path.basename(local_path)
+            if remote_path == "/" or remote_path.endswith('/'):
+                remote_path = f"{remote_path.rstrip('/')}/{filename}"
 
-            with console.status(f"Uploading {local_path} to {remote_path}..."):
-                self.webdav_client.upload_file(local_path, remote_path)
+            console.print(f"Uploading to: {remote_path}", style="blue")
+            
+            # Try both upload methods
+            try:
+                self.webdav_client.upload_sync(local_path=local_path, remote_path=remote_path)
+            except:
+                self.webdav_client.upload(local_path=local_path, remote_path=remote_path)
+                
             console.print(f"Successfully uploaded {local_path}", style="green")
             return True
+            
         except Exception as e:
-            console.print(f"Error uploading file: {e}", style="red")
+            console.print(f"Upload error: {str(e)}", style="red")
             return False
+
+    def reconnect(self):
+        """Try to reconnect using saved credentials"""
+        if self.config.get('last_server') and self.config.get('credentials'):
+            creds = self.config.get('credentials', {})
+            return self.connect(
+                self.config['last_server'],
+                creds.get('username'),
+                creds.get('password')
+            )
+        return False
 
 @click.group()
 @click.pass_context
@@ -172,6 +196,9 @@ def upload(client, local_path, remote_path):
     LOCAL_PATH is the path to the file on your computer
     REMOTE_PATH is the destination path on the server (default: /)
     """
+    # Show current working directory and file location
+    console.print(f"Current directory: {os.getcwd()}", style="blue")
+    console.print(f"Attempting to upload: {local_path}", style="blue")
     client.upload_file(local_path, remote_path)
 
 if __name__ == '__main__':
