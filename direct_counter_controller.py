@@ -171,6 +171,23 @@ class ARPCache(threading.Thread):
             swid = int(sw[1:]) #e.g., sw = 's10', swid = 10
             self.con[swid].controller.table_add("policy_table", action, [src_ip, dst_ip, dst_port])
             i += 1
+    def delete_bandwidth_rule(self, src_ip, dst_ip, dst_port):
+        src_swid = self.arpdb[src_ip]['swid']
+        dst_swid = self.arpdb[dst_ip]['swid']
+        path = self.topo.get_shortest_paths_between_nodes('s'+str(src_swid),'s'+str(dst_swid))[0]
+        logging.debug("shortest path between switches %s and %s is %s"%(src_swid, dst_swid, path))
+        i = 1 #index
+        logging.debug(f"delete m_read table from {src_ip} to {dst_ip}")
+
+        src_hw = self.arpdb[src_ip]["mac"]
+        match_fields = [src_hw, src_ip, dst_ip, dst_port]
+
+        logging.debug(f"match_fields: {match_fields}")
+
+        for sw in path:
+            swid = int(sw[1:]) #e.g., sw = 's10', swid = 10
+            self.con[swid].controller.table_delete_match("m_read", match_fields)
+            i += 1
 
     def delete_policy_rule(self, src_ip, dst_ip, dst_port, action):
         action = 'NoAction' if action == 'allow' else 'drop_packet'

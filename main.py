@@ -11,6 +11,9 @@ api = Api(app)
 policies = {}
 policy_counter = 0
 
+bandwidths_rule = {}
+bandwidths_rule_counter = 0
+
 instance = direct_counter_controller.ARPCache()
 instance.start()
 
@@ -41,6 +44,7 @@ def delete_policy_from_switch(instance, policy):
 
 @app.route('/bandwidth', methods=['POST'])
 def add_bandwidth_rule():
+    global bandwidths_rule_counter
     data = request.get_json()
     required_keys = ["src_ip", "dst_ip", "rates", "dst_port"]
 
@@ -49,10 +53,14 @@ def add_bandwidth_rule():
     if len(data["rates"]) != 2:
         return jsonify({"error": "Rates field must be a list"}), 400
 
+    for entry in bandwidths_rule:
+        if entry["src_ip"] == data["src_ip"] and entry["dst_ip"] == data["dst_ip"] and entry["dst_port"] == data["dst_port"]:
+            return jsonify({"error": "the rules is existed, please use PUT method to update the rule"}), 409
     
     path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["dst_port"])
 
     results = {
+            "id": bandwidths_rule_counter,
             "path": path,
             "src_ip": data["src_ip"],
             "dst_ip": data["dst_ip"],
@@ -60,7 +68,65 @@ def add_bandwidth_rule():
             "dst_port": data["dst_port"]
     }
 
+    bandwidths_rule[bandwidths_rule_counter] = results
+    bandwidths_rule_counter += 1
     return jsonify(results), 201
+
+@app.route('/bandwidth', methods=['GET'])
+def get_bandwidth():
+    return jsonify(list(bandwidths_rule.values())), 200
+
+
+@app.route('/bandwidth', methods=['PUT'])
+def upsert_bandwidth():
+    global bandwidths_rule_counter
+    data = request.get_json()
+    required_keys = ["src_ip", "dst_ip", "rates", "dst_port"]
+
+    if not all(key in data for key in required_keys):
+        return jsonify({"error": "Missing required fields: src_ip, dst_ip, rates, dst_port"}), 400
+    
+    existing_bandwidth_rule = None
+    entry_id = None
+    for entry in bandwidths_rule.values():
+        if entry["src_ip"] == data["src_ip"] and entry["dst_ip"] == data["dst_ip"] and entry["dst_port"] == data["dst_port"]:
+            existing_bandwidth_rule = entry
+            entry_id = entry["id"]
+            break
+
+    if existing_bandwidth_rule is not None:
+        path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["dst_port"])
+        results = {
+                "id": entry_id,
+                "path": path,
+                "src_ip": data["src_ip"],
+                "dst_ip": data["dst_ip"],
+                "rates": data["rates"],
+                "dst_port": data["dst_port"]
+        }
+        return jsonify(results), 201
+    else:
+        path = instance.set_meter_rules(data["src_ip"], data["dst_ip"], data["rates"], data["dst_port"])
+        results = {
+                "id": bandwidths_rule_counter,
+                "path": path,
+                "src_ip": data["src_ip"],
+                "dst_ip": data["dst_ip"],
+                "rates": data["rates"],
+                "dst_port": data["dst_port"]
+        }
+        bandwidths_rule[bandwidths_rule_counter] = results 
+        bandwidths_rule_counter += 1
+        return jsonify(results), 201
+
+@app.route('/bandwidth/<int:bandwidths_rule_id', methods=['DELETE'])
+def del_bandwidth_rule(bandwidths_rule_id):
+    if bandwidths_rule_id not in bandwidths_rule:
+        return jsonify({"error": "bandwidths_rule does not exist"}), 404
+    entry = bandwidths_rule[bandwidths_rule_id]
+    instance.delete_bandwidth_rule(entry["src_ip"], entry["dst_ip"], entry["dst_port"])
+    del bandwidths_rule[bandwidths_rule_id]
+    return jsonify({"message": "bandwidths_rule deleted"}), 201
 
 @app.route('/policies', methods=['GET'])
 def get_policies():
@@ -77,7 +143,7 @@ def add_policy():
 
     if data["action"] not in ["allow", "deny"]:
         return jsonify({"error": "action filed must be allow or deny"}), 400
-    
+
     policy = {
             "id": policy_counter,
             "src_ip": data["src_ip"],
@@ -85,6 +151,10 @@ def add_policy():
             "dst_port": data["dst_port"],
             "action": data["action"]
     }
+
+    for entry in policies:
+        if entry["src_ip"] == policy["src_ip"] and entry["dst_ip"] == policy["dst_ip"] and entry["dst_port"] == policy["dst_port"]:
+            return jsonify({"error": "the rules is existed, please use PUT method to update the rule"}), 409
     policies[policy_counter] = policy
     policy_counter += 1
 
@@ -105,6 +175,8 @@ def update_policy_by_id(policy_id):
         policy["src_ip"] = data["src_ip"]
     if "dst_ip" in data:
         policy["dst_ip"] = data["dst_ip"]
+    if "dst_port" in data:
+        policy["dst_port"] = data["dst_port"]
     if "action" in data:
         if data["action"] not in ["allow", "deny"]:
             return jsonify({"error": "action field must be allow or deny"}), 400
