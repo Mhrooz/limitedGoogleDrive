@@ -108,10 +108,7 @@ class Client:
             if not os.path.isabs(local_path):
                 local_path = os.path.abspath(local_path)
 
-            # Ensure local file exists
-            if not os.path.exists(local_path):
-                console.print(f"Local file {local_path} not found", style="red")
-                return False
+#
 
             # Get just the filename if remote_path is a directory
             if remote_path.endswith('/'):
