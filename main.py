@@ -152,7 +152,7 @@ def add_policy():
             "action": data["action"]
     }
 
-    for entry in policies:
+    for entry in policies.values():
         if entry["src_ip"] == policy["src_ip"] and entry["dst_ip"] == policy["dst_ip"] and entry["dst_port"] == policy["dst_port"]:
             return jsonify({"error": "the rules is existed, please use PUT method to update the rule"}), 409
     policies[policy_counter] = policy
