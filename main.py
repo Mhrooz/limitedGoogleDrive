@@ -24,17 +24,6 @@ counter_thread = threading.Thread(
 
 counter_thread.start()
 
-meter_thread = threading.Thread(
-        target = instance.read_meter_stats,
-        args = (1, "m_read", ["00:16:3e:00:00:02", "172.16.1.1", "172.16.1.2", "22"]),
-        daemon=True
-)
-
-meter_thread.start()
-
-# instance.con[1].controller.table_add("m_read", "m_action", ["52:54:00:83:a7:2d"])
-
-# instance.set_meter_rates("my_meter", "52:54:00:83:a7:2d", 1, [(1000000, 10000), (5000000, 20000)])
 
 def add_policy_to_switch(instance, policy):
     result = instance.install_policy_rule(policy["src_ip"], policy["dst_ip"], policy["dst_port"], policy["action"])
@@ -82,7 +71,7 @@ def get_bandwidth():
 
 
 @app.route('/bandwidth', methods=['PUT'])
-def upsert_bandwidth():
+def upsert_bandwidth_rule():
     global bandwidths_rule_counter
     data = request.get_json()
     required_keys = ["src_ip", "dst_ip", "rates", "dst_port"]

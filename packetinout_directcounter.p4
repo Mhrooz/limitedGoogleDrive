@@ -313,12 +313,7 @@ control MyIngress(inout headers hdr,
     }
     apply {
         if (hdr.packet_out.isValid()) {
-            // Implement logic such that if this is a packet-out from the
-            // controller:
-            // 1. Set the packet egress port to that found in the cpu_out header
-            // 2. Remove (set invalid) the cpu_out header
-            // 3. Exit the pipeline here (no need to go through other tables
-            standard_metadata.egress_spec = hdr.packet_out.egress_port;
+           standard_metadata.egress_spec = hdr.packet_out.egress_port;
             hdr.packet_out.setInvalid();
             exit;
         }
