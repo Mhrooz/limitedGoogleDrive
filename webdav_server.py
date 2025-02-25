@@ -79,7 +79,7 @@ def set_bandwidth_for_role(user_ip, role):
             "rates": [[0, 12500], [0, 12500]],  # Download only
             "dst_port": "5201"
         }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.put(url, headers=headers, json=data)
     return response.json()
 
 @app.route('/login', methods=['POST'])
