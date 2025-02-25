@@ -2,40 +2,40 @@
 
 # Function to connect to the server
 nas_connect() {
-    python client.py connect
+    python3 client.py connect
 }
 
 # Function to list files
 nas_ls() {
     local path="$1"
-    python client.py ls "$path"
+    python3 client.py ls "$path"
 }
 
 # Function to upload a file
 nas_upload() {
     local local_path="$1"
     local remote_path="$2"
-    python client.py upload "$local_path" "$remote_path"
+    python3 client.py upload "$local_path" "$remote_path"
 }
 
 # Function to download a file
 nas_download() {
     local remote_path="$1"
     local local_path="$2"
-    python client.py download "$remote_path" "$local_path"
+    python3 client.py download "$remote_path" "$local_path"
 }
 
 # Function to delete a file
 nas_delete() {
     local remote_path="$1"
-    python client.py delete "$remote_path"
+    python3 client.py delete "$remote_path"
 }
 
 # Function to rename a file
 nas_rename() {
     local old_remote_path="$1"
     local new_remote_path="$2"
-    python client.py rename "$old_remote_path" "$new_remote_path"
+    python3 client.py rename "$old_remote_path" "$new_remote_path"
 }
 
 # Function to create a new user (admin only)
@@ -43,18 +43,18 @@ nas_create_user() {
     local new_username="$1"
     local new_password="$2"
     local new_role="$3"
-    python client.py create_user "$new_username" "$new_password" "$new_role"
+    python3 client.py create_user "$new_username" "$new_password" "$new_role"
 }
 
 # Function to create a new directory
 nas_create_directory() {
     local remote_path="$1"
-    python client.py create_directory "$remote_path"
+    python3 client.py create_directory "$remote_path"
 }
 
 # Function to show user information
 nas_show_user_info() {
-    python client.py show_user_info
+    python3 client.py show_user_info
 }
 
 # Main script to handle commands
