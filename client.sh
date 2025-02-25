@@ -43,18 +43,18 @@ nas_create_user() {
     local new_username="$1"
     local new_password="$2"
     local new_role="$3"
-    python3 client.py create_user "$new_username" "$new_password" "$new_role"
+    python3 client.py create-user "$new_username" "$new_password" "$new_role"
 }
 
 # Function to create a new directory
 nas_create_directory() {
     local remote_path="$1"
-    python3 client.py create_directory "$remote_path"
+    python3 client.py create-directory "$remote_path"
 }
 
 # Function to show user information
 nas_show_user_info() {
-    python3 client.py show_user_info
+    python3 client.py show-user-info
 }
 
 # Main script to handle commands
