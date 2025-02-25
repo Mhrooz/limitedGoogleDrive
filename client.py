@@ -278,6 +278,27 @@ class Client:
             console.print(f"Error creating directory: {str(e)}", style="red")
             return False
 
+    def show_user_info(self):
+        if not self.token:
+            console.print("Not connected. Please connect first.", style="red")
+            return
+
+        decoded_token = jwt.decode(self.token, options={"verify_signature": False})
+        username = decoded_token.get('user', 'Unknown')
+        roles = decoded_token.get('roles', [])
+
+        allowed_functions = []
+        if "administrator" in roles:
+            allowed_functions = ["connect", "ls", "upload", "download", "delete", "rename", "create_user", "create_directory"]
+        elif "user" in roles:
+            allowed_functions = ["connect", "ls", "upload", "download", "delete", "rename", "create_directory"]
+        elif "visitor" in roles:
+            allowed_functions = ["connect", "ls", "download"]
+
+        console.print(f"Username: {username}", style="green")
+        console.print(f"Roles: {', '.join(roles)}", style="green")
+        console.print(f"Allowed Functions: {', '.join(allowed_functions)}", style="green")
+
 @click.group()
 @click.pass_context
 def cli(ctx):
@@ -385,6 +406,12 @@ def create_directory(client, remote_path):
     REMOTE_PATH is the path to the new directory on the server
     """
     client.create_directory(remote_path)
+
+@cli.command()
+@click.pass_obj
+def show_user_info(client):
+    """Show user information including username, roles, and allowed functions."""
+    client.show_user_info()
 
 if __name__ == '__main__':
     cli()

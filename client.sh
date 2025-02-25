@@ -52,6 +52,11 @@ nas_create_directory() {
     python client.py create_directory "$remote_path"
 }
 
+# Function to show user information
+nas_show_user_info() {
+    python client.py show_user_info
+}
+
 # Main script to handle commands
 case "$1" in
     connect)
@@ -78,7 +83,10 @@ case "$1" in
     create_directory)
         nas_create_directory "$2"
         ;;
+    show_user_info)
+        nas_show_user_info
+        ;;
     *)
-        echo "Usage: $0 {connect|ls|upload|download|delete|rename|create_user|create_directory}"
+        echo "Usage: $0 {connect|ls|upload|download|delete|rename|create_user|create_directory|show_user_info}"
         ;;
 esac
