@@ -65,12 +65,24 @@ def set_bandwidth_for_role(user_ip, role):
             "rates": [[1000000, 1000000], [1000000, 1000000]],  # No limit
             "dst_port": "5201"
         }
+        data_dav = {
+            "src_ip": user_ip,
+            "dst_ip": "192.168.1.3",
+            "rates": [[1000000, 1000000], [1000000, 1000000]],  # No limit
+            "dst_port": "8080"
+        }
     elif role == "user":
         data = {
             "src_ip": user_ip,
             "dst_ip": "192.168.1.3",
             "rates": [[12500, 12500], [12500, 12500]],  # Limited to 100 Kbps
             "dst_port": "5201"
+        }
+        data_dav = {
+            "src_ip": user_ip,
+            "dst_ip": "192.168.1.3",
+            "rates": [[12500, 12500], [12500, 12500]],  # Limited to 100 Kbps
+            "dst_port": "8080"
         }
     elif role == "visitor":
         data = {
@@ -79,7 +91,14 @@ def set_bandwidth_for_role(user_ip, role):
             "rates": [[0, 12500], [0, 12500]],  # Download only
             "dst_port": "5201"
         }
+        data_dav = {
+            "src_ip": user_ip,
+            "dst_ip": "192.168.1.3",
+            "rates": [[0, 12500], [0, 12500]],  # Download only
+            "dst_port": "8080"
+        }
     response = requests.put(url, headers=headers, json=data)
+    response = requests.put(url, headers=headers, json=data_dav)
     return response.json()
 
 @app.route('/login', methods=['POST'])
